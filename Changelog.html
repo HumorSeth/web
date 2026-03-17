@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SECURE_STATION://ONION_ROGEN_V12</title>
+    <style>
+        /* 1. 物理层强制显色 */
+        html { background-color: #000; overflow: hidden; }
+        body {
+            background: #000000;
+            color: #00ff41;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 15px;
+            display: flex; flex-direction: column;
+            height: 100vh;
+            border: 1px solid #003311;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* 模拟老式显示器扫视线 */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* 启动遮罩层 */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease;
+        }
+        .boot-box {
+            border: 1px solid #00ff41;
+            padding: 40px;
+            text-align: center;
+            background: #050505;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+        }
+        .boot-text { font-size: 14px; margin-bottom: 25px; letter-spacing: 2px; animation: blink 1s infinite; }
+        .enter-btn {
+            background: transparent;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 15px 40px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .enter-btn:hover { background: #00ff41; color: #000; box-shadow: 0 0 20px #00ff41; }
+
+        /* 顶部：跑马灯 */
+        .system-ticker {
+            border: 1px solid #00ff41;
+            background: #001100;
+            padding: 5px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .ticker-text { display: inline-block; animation: ticker-move 30s linear infinite; }
+        @keyframes ticker-move { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        .layout { display: flex; flex: 1; gap: 15px; overflow: hidden; }
+
+        /* 侧边栏 */
+        .sidebar { width: 280px; display: flex; flex-direction: column; gap: 15px; }
+        .widget { border: 1px solid #00ff41; padding: 10px; background: rgba(5, 5, 5, 0.9); transition: all 0.3s; }
+        .widget:hover { box-shadow: 0 0 15px rgba(0, 255, 65, 0.3); }
+        .widget-head { font-size: 10px; background: #00ff41; color: #000; padding: 0 5px; margin-bottom: 10px; font-weight: bold; display: flex; justify-content: space-between; }
+
+        .data-bar { height: 4px; background: #003311; margin-top: 5px; position: relative; overflow: hidden; }
+        .data-bar-fill { position: absolute; height: 100%; background: #00ff41; width: 30%; animation: loading-bar 2s infinite ease-in-out; }
+        @keyframes loading-bar { 0% { left: -30%; } 100% { left: 100%; } }
+
+        /* 中间：正文流 (优化滚动条) */
+        .main-feed {
+            flex: 1;
+            border: 1px solid #00ff41;
+            padding: 20px;
+            overflow-y: auto;
+            background: #020202;
+            /* 自定义滚动条样式 */
+            scrollbar-width: thin;
+            scrollbar-color: #00ff41 #000;
+        }
+        .main-feed::-webkit-scrollbar { width: 6px; }
+        .main-feed::-webkit-scrollbar-track { background: #000; }
+        .main-feed::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 3px; }
+
+        .blog-post { border-bottom: 1px dashed #003311; padding: 15px; margin-bottom: 15px; transition: background 0.2s; }
+        .blog-post:hover { background: rgba(0, 255, 65, 0.1); border-left: 3px solid #00ff41; }
+        .post-id { font-size: 10px; color: #006622; }
+        .post-h { font-size: 20px; color: #fff; margin: 8px 0; text-shadow: 0 0 5px #00ff41; }
+        .post-txt { font-size: 13px; line-height: 1.6; color: #aaffaa; text-align: justify; }
+
+        /* 右侧交互区 */
+        .contact-panel { width: 300px; border: 1px solid #00ff41; padding: 15px; background: #001100; display: flex; flex-direction: column; gap: 15px; }
+        
+        .scope-box { height: 60px; border: 1px solid #003311; position: relative; overflow: hidden; background: #000; }
+        .scope-line {
+            position: absolute; width: 100%; height: 2px; background: #00ff41;
+            top: 50%; animation: scope-move 2s infinite ease-in-out;
+            box-shadow: 0 0 8px #00ff41;
+        }
+        @keyframes scope-move { 0%, 100% { transform: translateY(-15px); } 50% { transform: translateY(15px); } }
+
+        .mail-btn {
+            display: block; border: 2px solid #00ff41; color: #00ff41; text-decoration: none; padding: 12px; text-align: center;
+            font-weight: bold; background: #000; transition: 0.2s;
+        }
+        .mail-btn:hover { background: #00ff41; color: #000; box-shadow: 0 0 20px #00ff41; animation: glitch-vibrate 0.1s infinite; }
+        @keyframes glitch-vibrate { 0% { transform: translate(0); } 25% { transform: translate(2px,-2px); } 50% { transform: translate(-2px,2px); } 100% { transform: translate(0); } }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* 底部版权注释 */
+        .footer-note {
+            margin-top: 15px; font-size: 10px; color: #006622;
+            display: flex; justify-content: space-between;
+            border-top: 1px solid #003311; padding-top: 10px;
+        }
+
+        @media (max-width: 768px) { .layout { flex-direction: column; } .sidebar, .contact-panel { width: 100%; } .main-feed { height: 400px; } }
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div class="boot-box">
+            <div class="boot-text">AUTHENTICATING_USER: SETH_ROGEN...</div>
+            <div style="font-size: 10px; color: #006622; margin-bottom: 20px;">[NYC_NODE_DETECTION_COMPLETE]</div>
+            <button class="enter-btn" onclick="enterSystem()">INITIALIZE_SYSTEM</button>
+        </div>
+    </div>
+
+    <div class="system-ticker">
+        <div class="ticker-text">
+            [SYS_STATUS]: SUBJECT: SETH_ROGEN // ORIGIN: NEW_YORK_CITY // CLASS: GEEK // STATUS: ENCRYPTING_STREAMS ... [UPLINK_ESTABLISHED] ... [NY_NODE_ACTIVE] ...
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <div class="widget">
+                <div class="widget-head"><span>DOSSIER_v12.0</span><span>GEEK_ONLY</span></div>
+                <div style="font-size: 18px; color: #fff; margin-bottom: 8px;">Seth Rogen</div>
+                <div style="font-size: 11px; line-height: 1.6; color: #00ff41;">
+                    > GENDER: MALE<br>
+                    > BIRTHPLACE: NEW YORK, NY<br>
+                    > PROFESSION: GEEK / ARCHITECT<br>
+                    > DOB: APRIL 15, 1982<br>
+                    > CLEARANCE: ROOT_ACCESS
+                </div>
+                <div class="data-bar"><div class="data-bar-fill"></div></div>
+            </div>
+
+            <div class="widget">
+                <div class="widget-head"><span>INTERESTS_DB</span></div>
+                <div style="font-size: 11px; line-height: 1.6;">
+                    - KERNEL_MODDING (Unix)<br>
+                    - ANALOG_ENCRYPTION<br>
+                    - POTTERY_OS_HARDWARE<br>
+                    - NYC_UNDERGROUND_MESH<br>
+                    - RETRO_COMPUTING
+                </div>
+            </div>
+
+            <div class="widget" style="flex:1; overflow:hidden;">
+                <div class="widget-head"><span>ACTIVE_PROCESS</span></div>
+                <div style="font-size: 9px; color: #006622; line-height: 1.3;">
+                    > MOUNTING /DEV/NYC_NODE...<br>
+                    > SCANNING 420.420 MHz...<br>
+                    > SHADOW_CLIENT_ACTIVE<br>
+                    > ENCRYPTING_TERMINAL_V12<br>
+                    > LATENCY: 12ms (NY-STATION)
+                </div>
+            </div>
+        </div>
+
+        <div class="main-feed">
+            <div class="blog-post">
+                <div class="post-id">#LOG_001 // NY_ROOT</div>
+                <h2 class="post-h">纽约：喧嚣下的静默位</h2>
+                <p class="post-txt">虽然我在纽约的繁华中穿梭，但我的精神永远锚定在 0 和 1 之间。纽约的地下光纤网是我见过最复杂的迷宫，每一条废弃的地铁线都隐藏着我部署的极客节点。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_002 // NEW_INTEL</div>
+                <h2 class="post-h">时代广场的信号劫持</h2>
+                <p class="post-txt">昨晚成功在时代广场的一个数字大屏后门植入了一个微型循环。它悄悄利用那个巨大的屏幕作为天线，向全纽约的节点发送心跳包。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_003 // ANALOG_SEC</div>
+                <h2 class="post-h">粘土与代码的共鸣</h2>
+                <p class="post-txt">每一只我亲手烧制的陶罐，在冷却过程中形成的微小裂纹都是独一无二的物理哈希。我将密钥隐藏在这些纹理中，无法被任何数字手段复制。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_004 // GEEK_LOGIC</div>
+                <h2 class="post-h">极客信条：代码即自由</h2>
+                <p class="post-txt">作为一个极客，我不相信现成的云端。所有的逻辑都必须经过我的手动校验，埋在纽约地下的物理硬盘才是我唯一的归宿。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_005 // NODE_SYNC</div>
+                <h2 class="post-h">布鲁克林中继站上线</h2>
+                <p class="post-txt">新的中继节点已经在布鲁克林旧工厂完成冷启动。目前的加密流量已经通过掩护协议成功混入当地的工业电力监控信号中。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_006 // SYSTEM_PATCH</div>
+                <h2 class="post-h">内核 0.42.0 补丁说明</h2>
+                <p class="post-txt">修复了在湿度过高时陶感传感器误触的问题。现在系统能够更精准地识别我通过旋转陶轮发送的莫尔斯电码。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_007 // DARK_FIBER</div>
+                <h2 class="post-h">暗光纤：曼哈顿的静脉</h2>
+                <p class="post-txt">我利用了 70 年代留下的废弃电报管道，铺设了一套纯手动的光通信系统。这种物理隔离是我在纽约保持匿名的关键。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_008 // BIO_HACK</div>
+                <h2 class="post-h">笑声指纹识别实验</h2>
+                <p class="post-txt">我的笑声频率在 420Hz 附近具有独特的谐波特征。今天成功将其应用为终端登录的第二层生物验证，效果惊人地稳定。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_009 // RETRO_HARDWARE</div>
+                <h2 class="post-h">重塑 1984 终端</h2>
+                <p class="post-txt">成功将一台老式 IBM 5150 改造成了暗网网关。没有任何现代操作系统漏洞，因为它的指令集全是我手写的。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_010 // NYC_MESH</div>
+                <h2 class="post-h">屋顶无线 Mesh 网络</h2>
+                <p class="post-txt">利用水箱作为掩护，我们在曼哈顿建立了 15 个点对点微波链路节点。现在的平均延迟已经压低到了 5 毫秒以内。</p>
+            </div>
+
+            <div class="blog-post">
+                <div class="post-id">#LOG_011 // SCRIPT_KIDDIE_BLOCK</div>
+                <h2 class="post-h">脚本小子的末日</h2>
+                <p class="post-txt">我设置了一个诱导陷阱。任何试图通过自动化工具扫描本站的行为，都会被反向锁定 IP 并发送一段长达 10GB 的乱码音频。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_012 // VINTAGE_OS</div>
+                <h2 class="post-h">为什么我爱 Unix v6</h2>
+                <p class="post-txt">在简洁的代码中寻找美感。现代代码太臃肿了，我们需要的是像陶瓷拉坯一样流畅的基础逻辑，而不是层层堆叠的库。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_013 // POTTERY_ENCODE</div>
+                <h2 class="post-h">釉料中的位元映射</h2>
+                <p class="post-txt">尝试在釉料中加入微量金属粉末，通过控制烧制时的温度分布，让花瓶表面在扫描仪下呈现出一组特定序列。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_014 // TRAFFIC_MASK</div>
+                <h2 class="post-h">流量伪装技术：Netflix 模式</h2>
+                <p class="post-txt">为了防止被 ISP 注意到异常流量，我开发了一个脚本将所有敏感数据包伪装成正在观看 4K 高清流媒体的样子。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_015 // SUBWAY_PING</div>
+                <h2 class="post-h">利用地铁震动发电</h2>
+                <p class="post-txt">在 L 线隧道墙壁安装了压电感应器。每当列车经过，产生的电流足以让我的低功耗监听器运行三分钟。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_016 // ZERO_TRUST</div>
+                <h2 class="post-h">零信任架构：物理版</h2>
+                <p class="post-txt">哪怕是我的猫，没有经过爪印识别也不能接近我的主要服务器台。物理隔离才是终极的安全防线。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_017 // CLOUD_SKEPTIC</div>
+                <h2 class="post-h">云端就是别人的电脑</h2>
+                <p class="post-txt">不要再问我为什么不备份到云端。我的备份是刻在石板上，埋在中央公园北边第三棵橡树底下的硬盘里。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_018 // LATENCY_FIGHT</div>
+                <h2 class="post-h">毫秒必争</h2>
+                <p class="post-txt">调整了纽约各节点之间的路由协议。虽然这花了我整整一个周末，但为了那 2ms 的优化，一切都是值得的。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_019 // GEEK_HOBBY</div>
+                <h2 class="post-h">极客的自我修养</h2>
+                <p class="post-txt">如果你不能自己修好你的电脑，你就不真正拥有它。如果你不能自己烧制你的烟灰缸，你就不懂得造物的乐趣。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_020 // END_OF_BLOCK_1</div>
+                <h2 class="post-h">第一阶段：部署完成</h2>
+                <p class="post-txt">全纽约的极客网络雏形已现。接下来，我们将通过老式广播电台频率建立更隐秘的后门链路。</p>
+            </div>
+
+            <div class="blog-post">
+                <div class="post-id">#LOG_021 // RADIO_SILENCE</div>
+                <h2 class="post-h">无线电静默计划</h2>
+                <p class="post-txt">在特殊时期，我们将完全切断数字信号，转向使用短波电台。这种被遗忘的频率是极客最后的避难所。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_022 // NY_WINTER</div>
+                <h2 class="post-h">纽约冬天的散热优势</h2>
+                <p class="post-txt">利用窗外的积雪进行服务器水冷循环。效率提升了 40%，且完全不消耗任何电力，这就是极客式的环保。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_023 // ENCRYPTION_ART</div>
+                <h2 class="post-h">将算法画在釉面上</h2>
+                <p class="post-txt">RSA 算法的精髓可以被简化成一种几何构图。我的新款陶瓷花纹其实是完整的加密演示过程。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_024 // TRACE_DECOY</div>
+                <h2 class="post-h">纽约路灯下的诱饵</h2>
+                <p class="post-txt">我在街头故意散布了一些带病毒的 USB 驱动器。别担心，那只是为了让某些好奇的追踪者掉入我预设的虚拟沙盒里。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_025 // COFFEE_CODE</div>
+                <h2 class="post-h">咖啡因驱动的编译过程</h2>
+                <p class="post-txt">曼哈顿凌晨两点的咖啡馆是产生灵感的最佳场所。在这里，我重写了整个系统的文件分配表（FAT）。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_026 // HARDWARE_MOD</div>
+                <h2 class="post-h">机械键盘的静谧改造</h2>
+                <p class="post-txt">为了不让隔壁的追踪者听到我的敲击节奏，我给键盘换上了全自制的陶瓷轴心。声音极小且手感如丝般顺滑。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_027 // NY_ARCHIVE</div>
+                <h2 class="post-h">纽约公共图书馆的秘密</h2>
+                <p class="post-txt">在索引卡片的缝隙里，我留下了一些物理标记。它们指向了曼哈顿地下网络的一个秘密入口。只有真正的极客能解开它。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_028 // SIGNAL_BOOST</div>
+                <h2 class="post-h">利用易拉罐增强信号</h2>
+                <p class="post-txt">最廉价的硬件往往能解决最复杂的问题。三个可乐罐制成的定向天线，让我的节点覆盖了整条街道。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_029 // GEEK_CULTURE</div>
+                <h2 class="post-h">拒绝消费主义</h2>
+                <p class="post-txt">不要买那些昂贵的成品服务器。去垃圾堆捡些旧零件，用你的大脑给它们赋予第二次生命。那才是极客精神。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_030 // UPLINK_STABLE</div>
+                <h2 class="post-h">上行链路：100% 稳定性</h2>
+                <p class="post-txt">连续运行 720 小时无宕机。在不稳定的纽约电力系统下，这简直是个奇迹。感谢我的特斯拉线圈稳压装置。</p>
+            </div>
+
+            <div class="blog-post">
+                <div class="post-id">#LOG_031 // TERMINAL_STYLE</div>
+                <h2 class="post-h">永远保持绿屏</h2>
+                <p class="post-txt">有人问我为什么不换成彩色显示。因为绿色是代码最原始的颜色，它能让我从视觉上直接感知逻辑的流动。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_032 // NY_NODE_42</div>
+                <h2 class="post-h">关于 42 号节点的传说</h2>
+                <p class="post-txt">那是位于帝国大厦顶端附近的一个极小发射源。它并不传输数据，它只是在宇宙中寻找志同道合的极客共振。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_033 // LOGIC_BOMB</div>
+                <h2 class="post-h">温和的逻辑炸弹</h2>
+                <p class="post-txt">如果有人强制拆解我的服务器，它会自动启动一段程序，在屏幕上循环播放我最喜欢的制陶视频，直到对方崩溃。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_034 // ANALOG_GATES</div>
+                <h2 class="post-h">用流水模拟逻辑门</h2>
+                <p class="post-txt">正在构思一套水力计算机。在停电的情况下，只要有重力，逻辑就能继续运行。这就是终极的鲁棒性。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_035 // NYC_STREETS</div>
+                <h2 class="post-h">躲避天眼扫描</h2>
+                <p class="post-txt">我发明了一款反光涂料，涂在陶罐表面可以完美干扰曼哈顿街头的 AI 视觉识别系统。隐身于众目睽睽之下。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_036 // CODE_POETRY</div>
+                <h2 class="post-h">汇编语言是现代的诗歌</h2>
+                <p class="post-txt">每一行 MOV 指令都是一次搬迁，每一行 JMP 都是一次旅行。精简的汇编代码是我最虔诚的信仰。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_037 // GEEK_GEAR</div>
+                <h2 class="post-h">随身极客套件</h2>
+                <p class="post-txt">一个树莓派，一把陶瓷镊子，一个万用表。有了这些，纽约的任何角落都可以成为我的实验室。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_038 // DATA_PURGE</div>
+                <h2 class="post-h">定期数据清理协议</h2>
+                <p class="post-txt">无用的数据会阻碍大脑的思考。每周五午夜，我的系统会自动擦除所有非核心的日志信息。保持整洁，保持敏锐。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_039 // FUTURE_PLAN</div>
+                <h2 class="post-h">向地下更深处进发</h2>
+                <p class="post-txt">纽约的地下还有无数未知的空间。我计划将我的核心节点下移到更深的地层，彻底隔绝来自地面的电磁干扰。</p>
+            </div>
+            <div class="blog-post">
+                <div class="post-id">#LOG_040 // ROOT_LOCKED</div>
+                <h2 class="post-h">ROOT_ACCESS_LOCKED</h2>
+                <p class="post-txt">所有纽约节点已进入静默模式。等待下次唤醒信号。极客精神永存，数据终将自由。本次会话结束。</p>
+            </div>
+        </div>
+
+        <div class="contact-panel">
+            <div class="widget-head">NETWORK_MONITOR</div>
+            
+            <div class="scope-box">
+                <div style="font-size: 8px; color: #00ff41; padding: 2px;">UPLINK_WAVEFORM</div>
+                <div class="scope-line"></div>
+            </div>
+
+            <div style="font-size: 11px; background: #000; padding: 10px; border: 1px solid #003311;">
+                <span style="color: #00ff41;">> LOC:</span> 40.7128° N, 74.0060° W<br>
+                <span style="color: #00ff41;">> IP:</span> 127.0.4.20 (MASKED)<br>
+                <span style="color: #00ff41;">> PGP:</span> [8BF8-XXXX-99AF]
+            </div>
+
+            <div style="border: 1px dashed #00ff41; padding: 10px;">
+                <p style="font-size: 10px; margin: 0 0 10px 0;">ESTABLISH ENCRYPTED UPLINK:</p>
+                <a href="mailto:seth.geek@nyc.onion" class="mail-btn">INIT_HANDSHAKE</a>
+            </div>
+
+            <div style="flex:1; font-size: 9px; color: #004411; border-top: 1px solid #003311; padding-top: 10px; line-height: 1.4;">
+                > 监测：曼哈顿中城节点响应正常...<br>
+                > 状态：加密通道已就绪。<br>
+                > 警告：TRACING_ATTEMPT 拦截成功。<br>
+                > 注意：此终端仅供授权极客访问。
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        <span>STATION_ID: NY_NODE_01</span>
+        <span>@2026 THE_ROGEN_ARCHIVE - ALL RIGHTS RESERVED_</span>
+        <span>ENCRYPTION: AES-256-LEVEL</span>
+    </div>
+
+    <script>
+        function enterSystem() {
+            const screen = document.getElementById('boot-screen');
+            screen.style.opacity = '0';
+            setTimeout(() => {
+                screen.style.display = 'none';
+            }, 800);
+        }
+    </script>
+</body>
+</html>
