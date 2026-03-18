@@ -473,14 +473,14 @@
     { title: "笑屋顶无线 Mesh 网络", content: "利用水箱作为掩护，我们在曼哈顿建立了 15 个点对点微波链路节点..." },
     { title: "暗光纤：曼哈顿的静脉", content: "我利用了 70 年代留下的废弃电报管道，铺设了一套纯手动的光通信系统..." },
     { title: "布鲁克林中继站上线", content: "新的中继节点已经在布鲁克林旧工厂完成冷启动..." },
-    { title: "脚本小子的末日", content: "我设置了一个诱导陷阱。任何试图通过自动化工具扫描本站的行为..." }
-    { title: "利用地铁震动发电", content: "在 L 线隧道墙壁安装了压电感应器。每当列车经过，产生的电流足以让我的低功耗监听器运行三分钟" }
-    { title: "零信任架构：物理版", content: "哪怕是我的猫，没有经过爪印识别也不能接近我的主要服务器台。物理隔离才是终极的安全防线" }  
-    { title: "云端就是别人的电脑", content: "不要再问我为什么不备份到云端。我的备份是刻在石板上，埋在中央公园北边第三棵橡树底下的硬盘里" } 
-    { title: "毫秒必争", content: "调整了纽约各节点之间的路由协议。虽然这花了我整整一个周末，但为了那 2ms 的优化，一切都是值得的" }  
-    { title: "极客的自我修养", content: "如果你不能自己修好你的电脑，你就不真正拥有它。如果你不能自己烧制你的烟灰缸，你就不懂得造物的乐趣。" },
-    { title: "第一阶段：部署完成", content: "全纽约的极客网络雏形已现。接下来，我们将通过老式广播电台频率建立更隐秘的后门链路。" },
-    { title: "无线电静默计划", content: "在特殊时期，我们将完全切断数字信号，转向使用短波电台。这种被遗忘的频率是极客最后的避难所。" },
+    { title: "脚本小子的末日", content: "我设置了一个诱导陷阱。任何试图通过自动化工具扫描本站的行为..." }, // 加了逗号
+    { title: "利用地铁震动发电", content: "在 L 线隧道墙壁安装了压电感应器。" }, // 加了逗号
+    { title: "零信任架构：物理版", content: "哪怕是我的猫，没有经过爪印识别也不能接近。" }, // 加了逗号
+    { title: "云端就是别人的电脑", content: "不要再问我为什么不备份到云端。" }, // 加了逗号
+    { title: "毫秒必争", content: "调整了纽约各节点之间的路由协议。" }, // 加了逗号
+    { title: "极客的自我修养", content: "如果你不能自己修好你的电脑，你就不真正拥有它。" }, // 添加逗号
+    { title: "第一阶段：部署完成", content: "全纽约的极客网络雏形已现。" }, // 添加逗号
+    { title: "无线电静默计划", content: "在特殊时期，我们将完全切断数字信号。" }, // 添加逗号
     { title: "纽约冬天的散热优势", content: "利用窗外的积雪进行服务器水冷循环。效率提升了 40%，且完全不消耗任何电力，这就是极客式的环保。" },
     { title: "将算法画在釉面上", content: "RSA 算法的精髓可以被简化成一种几何构图。我的新款陶瓷花纹其实是完整的加密演示过程。" },
     { title: "纽约路灯下的诱饵", content: "我在街头故意散布了一些带病毒的 USB 驱动器。别担心，那只是为了让某些好奇的追踪者掉入我预设的虚拟沙盒里。" },
@@ -503,28 +503,27 @@
 ];
 
             // 修改为生成 200 篇文章
-            for (let i = 1; i <= 200; i++) {
-                const topic = topics[i % topics.length];
-                const article = document.createElement('div');
-                article.className = 'blog-post';
-                article.onclick = function() { togglePost(this); };
-                
-                // 扩充填充文本，确保每篇超过 300 字
-                let filler = "";
-                for(let j = 0; j < 6; j++) {
-                    filler += ` 这是日志序列的第 ${i} 次完整备份。通过对纽约节点长期的数据监测，我发现 ${i} 这个数字在波段扰动中具有独特的统计学规律。这验证了我在日志 #LOG_040 中提出的“随机性收敛”假设。接下来的 100 天，我将加大影子练习的强度，尝试在更复杂的嘈杂环境（如纽约地铁 E 线）中保持 95% 以上的复述准确度。数据终将自由，但唯有通过勤奋的练习和严谨的代码，我们才能掌握这份自由。此日志已通过 STATION_01 完成 SHA-256 哈希校验。`;
-                }
-                
-                const fullContent = `${topic.content} ${filler} ${topic.content.substring(0, 100)}`;
-
-                article.innerHTML = `
-                    <div class="post-id">#LOG_${String(i).padStart(3, '0')} // ARCHIVE_DATA</div>
-                    <h2 class="post-h">${topic.title} - 实测数据_${i}</h2>
-                    <p class="post-txt">${fullContent}</p>
-                `;
-                container.appendChild(article);
-            }
+for (let i = 1; i <= 200; i++) {
+        const topic = topics[i % topics.length];
+        const article = document.createElement('div');
+        article.className = 'blog-post';
+        article.onclick = function() { togglePost(this); };
+        
+        let filler = "";
+        for(let j = 0; j < 4; j++) {
+            filler += ` 这是日志序列的第 ${i} 次完整备份。校验码：${Math.random().toString(16).toUpperCase()}。`;
         }
+        
+        const fullContent = `${topic.content}${filler}`;
+
+        article.innerHTML = `
+            <div class="post-id">#LOG_${String(i).padStart(3, '0')} // ARCHIVE_DATA</div>
+            <h2 class="post-h">${topic.title} - 实测数据_${i}</h2>
+            <div class="post-txt">${fullContent}</div>
+        `;
+        container.appendChild(article);
+    }
+}
     </script>
 </body>
 </html>
